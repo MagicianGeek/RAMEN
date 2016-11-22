@@ -35,20 +35,32 @@ app.get('/journal/:rec', function(req, res){
 	}
 });
 
-//get #Выводит записи по ID Студента
+//get #Выводит записи по ID Студента с итоговой оценкой
 
 app.get('/journal/studid/:id', function(req, res){
 	var sID = parseInt(req.params.id, 10);
-	var matchedStud = _.findWhere(journal, {Student_ID: sID});
+	var matchedStud = _.where(journal, {Student_ID: sID});
+	var sumGrade = 0;
+	var finalGrade = 0;
+	var n = matchedStud.length;
 
 	if(matchedStud){
-		res.json(matchedStud);
+		for(var i=0; i<n; i++)
+		{
+			sumGrade += matchedStud[i].Mark;
+		}
+			finalGrade = Math.round(sumGrade / n, 1);
+		res.send("Records of student marks with ID=" + sID
+			+"\n_______________________________\n"
+			+ JSON.stringify(matchedStud, null, 4)
+			+"\n"
+			+"Final grade: "+JSON.stringify(finalGrade, null, 4));
 	}else{
 		res.status(404).send('Student with this ID not found');
 	}
 });
 
-//post 
+//post #Добавление записи с данными о студенте
 
 app.post('/journal', function(req, res){
 	var body = _.pick(req.body, 'Student_ID', 'Name','Surname','Mark');
@@ -67,6 +79,8 @@ app.post('/journal', function(req, res){
 
 	res.json(body);
 });
+
+//delete #Удаление записи по ее номеру
 
 app.delete('/journal/:rec', function(req, res){
 	var recNum = parseInt(req.params.rec, 10);
