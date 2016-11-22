@@ -1,61 +1,82 @@
 var express = require('express');
+	var app = express();
+
 var bodyParser = require('body-parser');
+	app.use(bodyParser.json());
+
 var _ = require('underscore');
 
-var app = express();
-var PORT = process.env.PORT || 3000;
-var todos = [];
-var todoNextId = 1;
 
-app.use(bodyParser.json());
+var PORT = process.env.PORT || 3000;
+var journal = [];
+var nextRec = 1;
+
 
 app.get('/', function(req, res){
-	res.send('ToDo API Root');
+	res.send('My Group Journal');
 });
 
-// GET /todos
-app.get('/todos', function(req, res){
-	res.json(todos);
+//get #Выводит все записи в журнале
+
+app.get('/journal', function(req, res){
+	res.json(journal);
 });
 
-// GET /todos/:id
-app.get('/todos/:id', function(req, res){
-	var todoId = parseInt(req.params.id, 10);
-	var matchedTodo = _.findWhere(todos, {id: todoId});
+//get #Выводит запись по запрошенному номеру записи (rec)
 
-	if(matchedTodo){
-		res.json(matchedTodo);
+app.get('/journal/:rec', function(req, res){
+	var recNum = parseInt(req.params.rec, 10);
+	var matchedStud = _.findWhere(journal, {rec: recNum});
+
+	if(matchedStud){
+		res.json(matchedStud);
 	}else{
-		res.status(404).send();
+		res.status(404).send('Record with this number not found');
 	}
 });
 
-// POST /todos
+//get #Выводит записи по ID Студента
 
-app.post('/todos', function(req, res){
-	var body = _.pick(req.body, 'description', 'completed');
+app.get('/journal/studid/:id', function(req, res){
+	var sID = parseInt(req.params.id, 10);
+	var matchedStud = _.findWhere(journal, {Student_ID: sID});
 
-	if(!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0){
+	if(matchedStud){
+		res.json(matchedStud);
+	}else{
+		res.status(404).send('Student with this ID not found');
+	}
+});
+
+//post 
+
+app.post('/journal', function(req, res){
+	var body = _.pick(req.body, 'Student_ID', 'Name','Surname','Mark');
+
+	if(!_.isNumber(body.Student_ID) || !_.isString(body.Name) || !_.isString(body.Surname) || !_.isNumber(body.Mark) 
+		|| body.Mark>5 || body.Mark<1
+		|| body.Name.trim().length === 0 || body.Surname.trim().length === 0){
 		return res.status(400).send();
 	}
 
-	body.description = body.description.trim();
-	body.id = todoNextId++;
+	body.Name = body.Name.trim();
+	body.Surname = body.Surname.trim();
+	body.rec = nextRec++;
 
-	todos.push(body);
+	journal.push(body);
 
 	res.json(body);
 });
 
-app.delete('/todos/:id', function(req,res){
-	var todoId = parseInt(req.params.id,10);
-	var matchedTodo = _.findWhere(todos, {id: todoId});
+app.delete('/journal/:rec', function(req, res){
+	var recNum = parseInt(req.params.rec, 10);
+	var matchedStud = _.findWhere(journal, {rec: recNum});
 
-	if(!matchedTodo){
-		res.status(404).json({"error": "no todo found with that id"});
+	if(!matchedStud){
+		res.status(404).json({"error": "no record found with that id"});
 	}else{
-		todos = _.without(todos, matchedTodo);
-		res.json(matchedTodo);
+		journal = _.without(journal, matchedStud);
+		res.json(matchedStud);
 	}
 });
 
